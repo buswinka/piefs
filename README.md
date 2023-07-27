@@ -1,5 +1,5 @@
 # omnipose_pure_torch
-Solves the Eikonal Function on instances of an 2D/3D -- The Omnipose Target Function
+Solves the Eikonal Function on instance masks in an 2D/3D Image -- The Omnipose Target Function
 
 This implementation uses convolutions to calculate affinity masks, which may be faster and
 can occur on cuda, however uses dense representations of the affinity masks and therefore is 
