@@ -2,7 +2,9 @@ from math import sqrt
 from typing import List
 
 import torch
+import torch.nn.functional as F
 from torch import Tensor
+
 from src.morphology import binary_convolution
 
 
@@ -91,6 +93,7 @@ def eikonal_single_step(connected_components: Tensor) -> Tensor:
     phi = torch.pow(phi, 1 / 2)
     return phi
 
+
 @torch.compile(mode='max-autotune')
 @torch.no_grad()
 def solve_eikonal(
@@ -166,12 +169,13 @@ def gradient_from_eikonal(eikonal: Tensor) -> Tensor:
     Calculates the gradient of a distance field calculated by solving the eikonal distance function.
 
     Shapes:
-        - eikonal: (B, C, X, Y) or (B, C, X, Y, Z)
-        - returns: (B, C, 2, X, Y) or (B, C, 3, X, Y, Z)
+        - eikonal: (B, C=1, X, Y) or (B, C=1, X, Y, Z)
+        - returns: (B, 2, X, Y) or (B, 3, X, Y, Z)
 
     :param eikonal: eikonal distance field calculated by solve_eikonal
     :return: components of gradients of eikonal distance field.
     """
+
     spatial_dim = eikonal.ndim - 2  # [B, C, X, Y] or [B, C, X, Y, Z]
 
     if spatial_dim < 2 or spatial_dim > 3:
@@ -202,6 +206,8 @@ def gradient_from_eikonal(eikonal: Tensor) -> Tensor:
         vector_magnitude != 0
         ].sqrt()
 
+    vector_magnitude[vector_magnitude == 0] = float('inf')  # gets rid of divide by zero issue
+
     vector_magnitude = (
         vector_magnitude.view(1, 1, 9, 1, 1, 1)  # [B, C, N_affinities, N_spatial_dim, ...]
         if spatial_dim == 2
@@ -214,29 +220,44 @@ def gradient_from_eikonal(eikonal: Tensor) -> Tensor:
         else vector_direction.view(1, 1, 27, 3, 1, 1, 1)
     )
 
+
     affinities: Tensor = binary_convolution(
         eikonal, padding_mode="replicate"
     )  # [B, C, N=9 or 27, 1, ...]
 
+    affinities.sub_(eikonal)  # get difference...
+
     # Could probably do with 1D convolution???
     # 1D conv with a 1, 9/27 kernel on a flattened image...
     # kernel comes from the vector direction?
+    shape = eikonal.shape
+    shape[1] = spatial_dim
 
-    affinities.sub_(eikonal)  # get difference...
-    affinities = affinities.unsqueeze(3)  # add a new dim
-    affinities = torch.concat((affinities, affinities), dim=3)  # stack on top of each other...
+    gradient = []
+    for dim in range(spatial_dim):
+        kernel = vector_direction[:, [dim]].T.div((2 * vector_magnitude) ** 2)
 
-    vector_magnitude[vector_magnitude == 0] = float('inf')  # gets rid of divide by zero issue
+        # [B, C, 3**ndim, ...] -> [B, 3**Ndim, ...] -> conv1d
+        # -> [B, 1, ...] -> [B, 1, C, X, Y, Z?] -> [B, C, 1, X, Y, Z]
+        partial_gradient = F.conv1d(
+            affinities.transpose(1, 2).view(shape[0], shape[2], -1)
+        ).view(shape[0], shape[2], shape[1], *shape[3::]).transpose(1, 2)
+        gradient.append(partial_gradient)
 
-    gradient = (
-        affinities
-        .mul(vector_direction)  # multiply by the magnitude in space
-        .div((2 * vector_magnitude) ** 2)  # divide by distance from center pixel
-        .sum(dim=2)  # Sum part of dot product
-        .flip(2)  # Flip to put Y first for some reason
-    )  # [B ,C, GradientDim=2/3, ...]
+    return torch.concat((gradient), dim=2)
 
-    return gradient
+    # affinities = affinities.unsqueeze(3)  # add a new dim
+    # affinities = torch.concat((affinities, affinities), dim=3)  # stack on top of each other...
+
+
+    # gradient = (
+    #     affinities
+    #     .mul(vector_direction)  # multiply by the magnitude in space
+    #     .div((2 * vector_magnitude) ** 2)  # divide by distance from center pixel
+    #     .sum(dim=2)  # Sum part of dot product
+    #     .flip(2)  # Flip to put Y first for some reason
+    # )  # [B ,C, GradientDim=2/3, ...]
+
+    # return gradient
 
 #  Copyright Chris Buswinka, 2023
-

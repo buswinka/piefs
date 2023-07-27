@@ -1,5 +1,5 @@
-# omnipose_pure_torch
-Solves the Eikonal Function on instance masks in an 2D/3D Image -- The Omnipose Target Function
+# Omnipose Targets in Pure Torch
+Solves the Eikonal Function, and its gradients, on instance masks in an 2D/3D Image -- The Omnipose Target Function
 
 This implementation uses convolutions to calculate affinity masks, which may be faster and
 can occur on cuda, however uses dense representations of the affinity masks and therefore is 
@@ -9,10 +9,12 @@ for memory efficiency.
 A big thanks to Kevin Cutler (Original Omnipose Author) for helping me create this. 
 
 Example:
+
 ```python
-from src.eikonal import solve_eikonal
+from src.eikonal import solve_eikonal, gradient_from_eikonal
 import torch
 
-image = torch.load('path/to/my/image.pt')  # An image with shape (B, C, X, Y, Z)
-eikonal = solve_eikonal(image) # A Distance map with shape (B, C, X, Y, Z)
+image = torch.load('path/to/my/image.pt')  # An image with shape (B, C=1, X, Y, Z)
+eikonal = solve_eikonal(image)  # A Distance map with shape (B, C=1, X, Y, Z)
+gradients = gradient_from_eikonal(eikonal)  # A Gradient tensor with shape (B, C=3, X, Y, Z)
 ```
