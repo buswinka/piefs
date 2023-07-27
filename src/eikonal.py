@@ -91,13 +91,17 @@ def eikonal_single_step(connected_components: Tensor) -> Tensor:
     phi = torch.pow(phi, 1 / 2)
     return phi
 
-
+@torch.compile(mode='max-autotune')
+@torch.no_grad()
 def solve_eikonal(
         instance_mask: Tensor, eps: float = 1e-3, min_steps: int = 51
 ) -> Tensor:
     """
     Solves the eikonal equation on a collection of instance masks. In practice, generates
     a specialized distance mask for each instance of an object in an image. Input may be a 2D or 3D image.
+
+    Possible Optimization: omnipose tracks only the filled values of the mask for the affinities,
+    it may be possible for me to do the same for a memory reduction.
 
     Shapes:
         - instance_mask (B, C, X, Y) or (B, C, X, Y, Z)
@@ -136,7 +140,7 @@ def solve_eikonal(
     t = 0
     error = float("inf")
 
-    while error > eps and t < min_steps:
+    while error > eps and t < min_steps:  # Loop is a hard bottleneck...
 
         T: Tensor = eikonal_single_step(
             binary_convolution(T, "replicate") * affinity_mask
