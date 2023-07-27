@@ -160,5 +160,74 @@ def solve_eikonal(
 
     return T
 
+
+def gradient_from_eikonal(eikonal: Tensor) -> Tensor:
+    """
+    Calculates the gradient of a distance field calculated by solving the eikonal distance function.
+
+    Shapes:
+        - eikonal: (B, C, X, Y) or (B, C, X, Y, Z)
+        - returns: (B, C, 2, X, Y) or (B, C, 3, X, Y, Z)
+
+    :param eikonal: eikonal distance field calculated by solve_eikonal
+    :return: components of gradients of eikonal distance field.
+    """
+    spatial_dim = eikonal.ndim - 2  # [B, C, X, Y] or [B, C, X, Y, Z]
+
+    if spatial_dim < 2 or spatial_dim > 3:
+        raise RuntimeError(
+            f"Spatial Dimension of {spatial_dim} is not supported: {eikonal.shape}"
+        )
+
+    # For the gradient calculation, we need to know if the adjacent pixels are above,
+    # below, or next to the base pixel...
+    vector_direction = torch.zeros(  # [9, 2] or [27, 3] array
+        (3 ** spatial_dim, spatial_dim), device=eikonal.device, dtype=torch.long
+    )
+    ind = 0
+    for k in (1, 0, -1) if spatial_dim == 3 else (0,):
+        for j in (1, 0, -1):
+            for i in (-1, 0, 1):
+                vector_direction[ind, 0] = i
+                vector_direction[ind, 1] = j
+                if spatial_dim == 3:
+                    vector_direction[ind, 2] = k
+
+                ind += 1
+
+    # 27 or 9 tensor
+    # 0, 1, 1.41, 1.713... or something idk
+    vector_magnitude = vector_direction.abs().sum(dim=1).float()
+    vector_magnitude[vector_magnitude != 0] = vector_magnitude[
+        vector_magnitude != 0
+        ].sqrt()
+
+    vector_magnitude = (
+        vector_magnitude.view(1, 1, 9, 1, 1, 1)  # [B, C, N_affinities, N_spatial_dim, ...]
+        if spatial_dim == 2
+        else vector_magnitude.view(1, 1, 27, 1, 1, 1, 1)
+    )
+
+    affinities: Tensor = binary_convolution(
+        eikonal, padding_mode="replicate"
+    )  # [B, C, N=9 or 27, 1, ...]
+
+    # Could probably do with 1D convolution???
+    # 1D conv with a 1, 9/27 kernel on a flattened image...
+    # kernel comes from the vector direction?
+
+    affinities.sub_(eikonal)  # get difference...
+    affinities = affinities.unsqueeze(3)
+    affinities = torch.concat((affinities, affinities), dim=3)  # stack on top of each other...
+
+    gradient = (
+        affinities[:, :, vector_direction, ...]
+        .sub(eikonal)
+        .mul(vector_magnitude)
+        .mean(dim=2)
+    )  # [B ,C, GradientDim=2/3, ...]
+
+    return gradient
+
 #  Copyright Chris Buswinka, 2023
 
