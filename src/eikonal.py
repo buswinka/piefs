@@ -186,7 +186,7 @@ def gradient_from_eikonal(eikonal: Tensor) -> Tensor:
     )
     ind = 0
     for k in (1, 0, -1) if spatial_dim == 3 else (0,):
-        for j in (1, 0, -1):
+        for j in (-1, 0, 1):
             for i in (-1, 0, 1):
                 vector_direction[ind, 0] = i
                 vector_direction[ind, 1] = j
@@ -208,6 +208,12 @@ def gradient_from_eikonal(eikonal: Tensor) -> Tensor:
         else vector_magnitude.view(1, 1, 27, 1, 1, 1, 1)
     )
 
+    vector_direction = (
+        vector_direction.view(1, 1, 9, 2, 1, 1)  # [B, C, N_affinities, N_spatial_dim, ...]
+        if spatial_dim == 2
+        else vector_direction.view(1, 1, 27, 3, 1, 1, 1)
+    )
+
     affinities: Tensor = binary_convolution(
         eikonal, padding_mode="replicate"
     )  # [B, C, N=9 or 27, 1, ...]
@@ -217,14 +223,17 @@ def gradient_from_eikonal(eikonal: Tensor) -> Tensor:
     # kernel comes from the vector direction?
 
     affinities.sub_(eikonal)  # get difference...
-    affinities = affinities.unsqueeze(3)
+    affinities = affinities.unsqueeze(3)  # add a new dim
     affinities = torch.concat((affinities, affinities), dim=3)  # stack on top of each other...
 
+    vector_magnitude[vector_magnitude == 0] = float('inf')  # gets rid of divide by zero issue
+
     gradient = (
-        affinities[:, :, vector_direction, ...]
-        .sub(eikonal)
-        .mul(vector_magnitude)
-        .mean(dim=2)
+        affinities
+        .mul(vector_direction)  # multiply by the magnitude in space
+        .div((2 * vector_magnitude) ** 2)  # divide by distance from center pixel
+        .sum(dim=2)  # Sum part of dot product
+        .flip(2)  # Flip to put Y first for some reason
     )  # [B ,C, GradientDim=2/3, ...]
 
     return gradient
