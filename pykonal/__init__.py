@@ -1,1 +1,1 @@
-from eikonal import *
+from pykonal.eikonal import *
