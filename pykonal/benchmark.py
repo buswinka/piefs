@@ -1,6 +1,6 @@
 import timeit
 from omnipose.core import masks_to_flows_batch
-from src.eikonal import solve_eikonal
+from pykonal.eikonal import solve_eikonal
 import skimage.io as io
 
 
