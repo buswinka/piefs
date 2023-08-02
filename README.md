@@ -1,7 +1,7 @@
 # Pykonal 
 
 Pykonal is a library which solves the Eikonal Function for 2D and 3D instance masks, using the Fast Iterative Method. 
-It achieves memory efficiency through a fused kernel written in triton. 
+It achieves memory efficiency through a fused kernel written in OpenAI Triton. 
 It also provides functionality to calculate gradients of the eikonal field. 
 
 This implementation uses convolutions to calculate affinity masks, which may be faster and
