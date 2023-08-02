@@ -2,11 +2,8 @@ from math import sqrt
 from typing import List
 
 import torch
-import torch.nn.functional as F
-import triton
-import triton.language as tl
 from torch import Tensor
-from yacs.config import CfgNode
+
 from pykonal.morphology import binary_convolution
 from pykonal.kernels import update3d
 
