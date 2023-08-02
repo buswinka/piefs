@@ -5,21 +5,21 @@
 
 pykonal.eikonal
 ---------------
-.. automodule:: pykonal.eikonal
+.. automodule:: piefs.eikonal
    :members:
    :undoc-members:
    :private-members:
 
 pykonal.morphology
 ------------------
-.. automodule:: pykonal.morphology
+.. automodule:: piefs.morphology
    :members:
    :undoc-members:
    :private-members:
 
 pykonal.kernels
 ---------------
-.. automodule:: pykonal.kernels
+.. automodule:: piefs.kernels
    :members:
    :undoc-members:
    :private-members:

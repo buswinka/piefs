@@ -1,1 +1,0 @@
-from pykonal.eikonal import *

@@ -4,8 +4,8 @@ from typing import List
 import torch
 from torch import Tensor
 
-from pykonal.morphology import binary_convolution
-from pykonal.kernels import update3d
+from piefs.morphology import binary_convolution
+from piefs.kernels import update3d
 
 
 def _update_3d(minimum_paired: Tensor, f: float) -> Tensor:

@@ -3,12 +3,15 @@
 .. raw:: html
 
         <h1>
-            <span style="color: #e72333">Pykonal</span>
+            <span style="color: #e72333">PIEFS</span>
         </h1>
+        <h4>
+            <span style="color: #e72333">Python Instance (map) Eikonal Function Solver</span>
+        </h4>
 
 
 
-Pykonal is a library which solves the Eikonal Function for 2D and 3D instance masks, using the Fast Iterative Method.
+PIEFS a library which solves the Eikonal Function for 2D and 3D instance masks, using the Fast Iterative Method.
 It achieves memory efficiency through a fused kernel written in OpenAI Triton.
 It also provides functionality to calculate gradients of the eikonal field.
 

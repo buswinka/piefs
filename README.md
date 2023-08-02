@@ -1,6 +1,6 @@
-# Pykonal 
+# Python Instance Eikonal Function Solver (PIEFS) 
 
-Pykonal is a library which solves the Eikonal Function for 2D and 3D instance masks, using the Fast Iterative Method.
+PIEFS is a library which solves the Eikonal Function for 2D and 3D instance masks, using the Fast Iterative Method.
 It achieves memory efficiency through a fused kernel written in OpenAI Triton.
 It also provides functionality to calculate gradients of the eikonal field.
 
@@ -15,7 +15,7 @@ Example:
 
 ```python
 import torch
-from pykonal import solve_eikonal, gradient_from_eikonal
+from piefs import solve_eikonal, gradient_from_eikonal
 
 image = torch.load('path/to/my/image.pt')  # An image with shape (B, C=1, X, Y, Z)
 eikonal = solve_eikonal(image, eps=1e-5, min_steps=200, use_triton=True)  # A Distance map with shape (B, C=1, X, Y, Z)
