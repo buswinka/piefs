@@ -1,5 +1,8 @@
-# Omnipose Targets in Pure Torch
-Solves the Eikonal Function, and its gradients, on instance masks in an 2D/3D Image -- The Omnipose Target Function
+# Pykonal 
+
+Pykonal is a library which solves the Eikonal Function for 2D and 3D instance masks, using the Fast Iterative Method. 
+It achieves memory efficiency through a fused kernel written in triton. 
+It also provides functionality to calculate gradients of the eikonal field. 
 
 This implementation uses convolutions to calculate affinity masks, which may be faster and
 can occur on cuda, however uses dense representations of the affinity masks and therefore is 
