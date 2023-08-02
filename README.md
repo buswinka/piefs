@@ -14,8 +14,8 @@ A big thanks to Kevin Cutler (Original Omnipose Author) for helping me create th
 Example:
 
 ```python
-from pykonal.eikonal import solve_eikonal, gradient_from_eikonal
 import torch
+from pykonal import solve_eikonal, gradient_from_eikonal
 
 image = torch.load('path/to/my/image.pt')  # An image with shape (B, C=1, X, Y, Z)
 eikonal = solve_eikonal(image)  # A Distance map with shape (B, C=1, X, Y, Z)
